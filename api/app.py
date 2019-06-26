@@ -53,7 +53,7 @@ def rainbowcoin(token_id):
     #                token_id, display_type="number")
 
     return jsonify({
-        'name': "RainbowCoin #%s" % token_id,
+        'name': "RainbowCoin %s" % _get_hex_from_token(token_id),
         'description': "TODO: Description for a single RainbowCoin",
         'image': image_url,
         'external_url': 'https://rainbowco.in/coin/%s' % token_id,
@@ -93,11 +93,13 @@ def _add_attribute(existing, attribute_name, options, token_id, display_type=Non
     existing.append(trait)
 
 
-def _compose_image(token_id, color=(255, 0, 0, 255), path="coins"):
-    bkg = Image.new('RGBA', (COIN_SIZE, COIN_SIZE), (0, 0, 0, 0))
+def _compose_image(token_id, path="coins"):
+    red, green, blue = _get_rgb_from_token(token_id)
+
+    bkg = Image.new('RGBA', (COIN_SIZE + COIN_PADDING, COIN_SIZE + COIN_PADDING), (0, 0, 0, 0))
     draw = ImageDraw.Draw(bkg)
-    draw.ellipse((COIN_PADDING, COIN_PADDING,
-                  COIN_SIZE, COIN_SIZE), fill=color)
+    draw.ellipse((COIN_PADDING, COIN_PADDING, COIN_SIZE, COIN_SIZE),
+                  fill=(red, green, blue, 255))
     base = Image.open('images/coin/coin.png').convert("RGBA")
     output_path = "images/output/%s.png" % token_id
     composite = Image.alpha_composite(bkg, base)
@@ -118,6 +120,16 @@ def _get_bucket():
         project=GOOGLE_STORAGE_PROJECT, credentials=credentials)
     return client.get_bucket(GOOGLE_STORAGE_BUCKET)
 
+
+def _get_rgb_from_token(token_id):
+    tmp, blue= divmod(int(token_id), 256)
+    tmp, green= divmod(tmp, 256)
+    alpha, red= divmod(tmp, 256)
+    return red, green, blue
+
+def _get_hex_from_token(token_id):
+  red, green, blue = _get_rgb_from_token(token_id)
+  return "#{:02x}{:02x}{:02x}".format(red, green, blue)
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
