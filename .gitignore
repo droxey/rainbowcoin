@@ -1,0 +1,12 @@
+build/
+flattened/
+node_modules/
+
+
+*.log
+.env
+*.DS_Store
+
+__pycache__/
+venv/
+credentials.json
