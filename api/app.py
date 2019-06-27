@@ -9,10 +9,12 @@ from google.oauth2 import service_account
 from PIL import Image, ImageDraw
 
 
+COIN_BLACK = 'images/coin/coin.png'
+COIN_WHITE = 'images/coin/coin-light.png'
 GOOGLE_STORAGE_PROJECT = "RainbowCoin"
 GOOGLE_STORAGE_BUCKET = "rainbowco.in"
 COIN_PADDING = 3
-COIN_SIZE = 268 - COIN_PADDING
+COIN_SIZE = 500 - COIN_PADDING
 
 app = Flask(__name__)
 
@@ -95,12 +97,15 @@ def _add_attribute(existing, attribute_name, options, token_id, display_type=Non
 
 def _compose_image(token_id, path="coins"):
     red, green, blue = _get_rgb_from_token(token_id)
+    luminance = _get_luminance_from_rgb(red, green, blue)
+    print(luminance)
 
     bkg = Image.new('RGBA', (COIN_SIZE + COIN_PADDING, COIN_SIZE + COIN_PADDING), (0, 0, 0, 0))
     draw = ImageDraw.Draw(bkg)
     draw.ellipse((COIN_PADDING, COIN_PADDING, COIN_SIZE, COIN_SIZE),
                   fill=(red, green, blue, 255))
-    base = Image.open('images/coin/coin.png').convert("RGBA")
+    base_img = COIN_BLACK if luminance > 30.0 else COIN_WHITE
+    base = Image.open(base_img).convert("RGBA")
     output_path = "images/output/%s.png" % token_id
     composite = Image.alpha_composite(bkg, base)
     composite.save(output_path)
@@ -130,6 +135,9 @@ def _get_rgb_from_token(token_id):
 def _get_hex_from_token(token_id):
   red, green, blue = _get_rgb_from_token(token_id)
   return "#{:02x}{:02x}{:02x}".format(red, green, blue)
+
+def _get_luminance_from_rgb(red, green, blue):
+    return (.299 * red) + (.587 * green) + (.114 * blue)
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
