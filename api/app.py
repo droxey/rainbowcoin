@@ -19,76 +19,46 @@ COIN_SIZE = 500 - COIN_PADDING
 app = Flask(__name__)
 
 
-# FIRST_NAMES = ['Herbie', 'Sprinkles', 'Boris', 'Dave', 'Randy', 'Captain']
-# LAST_NAMES = ['Starbelly', 'Fisherton', 'McCoy']
-# BASES = ['jellyfish', 'starfish', 'crab', 'narwhal', 'tealfish', 'goldfish']
-# EYES = ['big', 'joy', 'wink', 'sleepy', 'content']
-# MOUTH = ['happy', 'surprised', 'pleased', 'cute']
-# INT_ATTRIBUTES = [5, 2, 3, 4, 8]
-# FLOAT_ATTRIBUTES = [1.4, 2.3, 11.7, 90.2, 1.2]
-# STR_ATTRIBUTES = ['happy', 'sad', 'sleepy', 'boring']
-# BOOST_ATTRIBUTES = [10, 40, 30]
-# PERCENT_BOOST_ATTRIBUTES = [5, 10, 15]
-# NUMBER_ATTRIBUTES = [1, 2, 1, 1]
-
-
 @app.route('/api/coin/<token_id>')
 def rainbowcoin(token_id):
-    token_id = int(token_id)
     image_url = _compose_image(token_id)
+    hex_code = _get_hex_from_token(token_id)
+    red, green, blue = _get_rgb_from_token(token_id)
 
-    # base = BASES[token_id % len(BASES)]
-    # eyes = EYES[token_id % len(EYES)]
-    # mouth = MOUTH[token_id % len(MOUTH)]
-    # attributes = []
-    # _add_attribute(attributes, 'base', BASES, token_id)
-    # _add_attribute(attributes, 'eyes', EYES, token_id)
-    # _add_attribute(attributes, 'mouth', MOUTH, token_id)
-    # _add_attribute(attributes, 'level', INT_ATTRIBUTES, token_id)
-    # _add_attribute(attributes, 'stamina', FLOAT_ATTRIBUTES, token_id)
-    # _add_attribute(attributes, 'personality', STR_ATTRIBUTES, token_id)
-    # _add_attribute(attributes, 'aqua_power', BOOST_ATTRIBUTES,
-    #                token_id, display_type="boost_number")
-    # _add_attribute(attributes, 'stamina_increase', PERCENT_BOOST_ATTRIBUTES,
-    #                token_id, display_type="boost_percentage")
-    # _add_attribute(attributes, 'generation', NUMBER_ATTRIBUTES,
-    #                token_id, display_type="number")
+    attributes = []
+    _add_attribute(attributes, 'red', red, token_id)
+    _add_attribute(attributes, 'green', green, token_id)
+    _add_attribute(attributes, 'blue', blue, token_id)
+    _add_attribute(attributes, 'hex', hex_code, token_id)
 
     return jsonify({
-        'name': "RainbowCoin %s" % _get_hex_from_token(token_id),
-        'description': "TODO: Description for a single RainbowCoin",
+        'name': f"RainbowCoin {hex_code}",
+        'description': f"RGB ({red}, {blue}, {green})",
         'image': image_url,
-        'external_url': 'https://rainbowco.in/coin/%s' % token_id,
-        'attributes': [
-
-        ]
+        'external_url': f"https://rainbowco.in/coin/{token_id}",
+        'attributes': attributes
     })
 
 
 @app.route('/api/factory/<token_id>')
 def factory(token_id):
     token_id = int(token_id)
-    name = "One OpenSea creature"
-    description = "When you purchase this option, you will receive a single OpenSea creature of a random variety. " \
-                  "Enjoy and take good care of your aquatic being!"
-    image_url = _compose_image(['images/factory/egg.png'], token_id, "factory")
-    num_inside = 1
     attributes = []
-    _add_attribute(attributes, 'number_inside', [num_inside], token_id)
+    _add_attribute(attributes, 'number_inside', [1], token_id)
 
     return jsonify({
-        'name': name,
-        'description': description,
-        'image': image_url,
-        'external_url': 'https://openseacreatures.io/%s' % token_id,
+        'name': "One RainbowCoin",
+        'description': "When you purchase this option, you will receive one RainbowCoin!",
+        'image': 'https://storage.googleapis.com/rainbowco.in/factory/random-coin.png',
+        'external_url': 'https://rainbowco.in/factory/%s' % token_id,
         'attributes': attributes
     })
 
 
-def _add_attribute(existing, attribute_name, options, token_id, display_type=None):
+def _add_attribute(existing, attribute_name, value, token_id, display_type=None):
     trait = {
         'trait_type': attribute_name,
-        'value': options[token_id % len(options)]
+        'value': value
     }
     if display_type:
         trait['display_type'] = display_type
@@ -98,12 +68,12 @@ def _add_attribute(existing, attribute_name, options, token_id, display_type=Non
 def _compose_image(token_id, path="coins"):
     red, green, blue = _get_rgb_from_token(token_id)
     luminance = _get_luminance_from_rgb(red, green, blue)
-    print(luminance)
 
-    bkg = Image.new('RGBA', (COIN_SIZE + COIN_PADDING, COIN_SIZE + COIN_PADDING), (0, 0, 0, 0))
+    bkg = Image.new('RGBA', (COIN_SIZE + COIN_PADDING,
+                             COIN_SIZE + COIN_PADDING), (0, 0, 0, 0))
     draw = ImageDraw.Draw(bkg)
     draw.ellipse((COIN_PADDING, COIN_PADDING, COIN_SIZE, COIN_SIZE),
-                  fill=(red, green, blue, 255))
+                 fill=(red, green, blue, 255))
     base_img = COIN_BLACK if luminance > 30.0 else COIN_WHITE
     base = Image.open(base_img).convert("RGBA")
     output_path = "images/output/%s.png" % token_id
@@ -127,17 +97,20 @@ def _get_bucket():
 
 
 def _get_rgb_from_token(token_id):
-    tmp, blue= divmod(int(token_id), 256)
-    tmp, green= divmod(tmp, 256)
-    alpha, red= divmod(tmp, 256)
+    tmp, blue = divmod(int(token_id), 256)
+    tmp, green = divmod(tmp, 256)
+    alpha, red = divmod(tmp, 256)
     return red, green, blue
 
+
 def _get_hex_from_token(token_id):
-  red, green, blue = _get_rgb_from_token(token_id)
-  return "#{:02x}{:02x}{:02x}".format(red, green, blue)
+    red, green, blue = _get_rgb_from_token(token_id)
+    return "#{:02x}{:02x}{:02x}".format(red, green, blue).upper()
+
 
 def _get_luminance_from_rgb(red, green, blue):
     return (.299 * red) + (.587 * green) + (.114 * blue)
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
