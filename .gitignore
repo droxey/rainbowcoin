@@ -1,6 +1,7 @@
 build/
 flattened/
 node_modules/
+api/images/output/*.png
 
 
 *.log
