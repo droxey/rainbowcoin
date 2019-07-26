@@ -1,3 +1,5 @@
+<p align="center"><img src="rainbowcoin.svg" width="250"></p>
+
 # rainbowcoin
 
-🌈 Collect, curate, and collaborate to build and trade colorful creations on the blockchain.
+🌈 _Collect, curate, and collaborate to build and trade colorful creations on the blockchain!_
