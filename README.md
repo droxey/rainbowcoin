@@ -1,3 +1,3 @@
 # rainbowcoin
 
-🌈 Collect, curate, and collaborate to create colorful creations on the blockchain.
+🌈 Collect, curate, and collaborate to build and trade colorful creations on the blockchain.
