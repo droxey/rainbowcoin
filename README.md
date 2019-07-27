@@ -1,4 +1,4 @@
-<p align="center"><img src="rainbowcoin.svg" width="250"></p>
+<img src="header.png">
 
 # rainbowcoin
 
