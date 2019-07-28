@@ -27,13 +27,7 @@ def rainbowcoin(rgb_id):
 
     # Get all the data for this RainbowCoin.
     info = metadata.get_color_info(rgb_id)
-
-    # Remove internal-only attributes before returning public metadata.
-    remove = ['red', 'green', 'blue', 'title', 'description', 'image']
-    external_attrs = info.copy()
-    for key in remove:
-        del(external_attrs[key])
-    attrs = metadata.get_color_attributes(external_attrs)
+    attrs = metadata.get_color_attributes(info)
 
     # Render OpenSea-compatible JSON metadata.
     # See https://docs.opensea.io/docs/2-adding-metadata for more.
@@ -68,4 +62,6 @@ def handle_invalid_usage(error):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=True)
+    app.run(
+        debug=os.getenv('DEBUG', True),
+        use_reloader=True)

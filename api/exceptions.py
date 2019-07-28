@@ -2,6 +2,7 @@ from flask import jsonify
 
 
 class InvalidUsage(Exception):
+    """Custom flask exception for reporting errors back to users."""
     status_code = 400
 
     def __init__(self, message, status_code=None, payload=None):

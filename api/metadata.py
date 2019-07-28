@@ -1,18 +1,23 @@
+import os
 import webcolors
 import string
 
 from colourlovers import clapi
 from google.cloud import storage
-from google.oauth2 import service_account
+from google.oauth2 import service_account as sa
 from PIL import Image, ImageDraw
 
 
-GOOGLE_STORAGE_PROJECT = "RainbowCoin"
-GOOGLE_STORAGE_BUCKET = "rainbowco.in"
+STORAGE_CREDENTIALS = os.getenv('CREDENTIALS_FILE', 'credentials.json')
+STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', None)
+STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', None)
+STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
+
 COIN_BLACK = 'images/coin/coin.png'
 COIN_WHITE = 'images/coin/coin-light.png'
 COIN_PADDING = 3
 COIN_SIZE = 500 - COIN_PADDING
+INTERNAL_ATTRIBUTES = ['red', 'green', 'blue', 'title', 'description', 'image']
 
 
 def get_color_info(rgb_id):
@@ -47,9 +52,9 @@ def get_color_info(rgb_id):
         'percentage_of_red': float(rgb_percent.red.replace('%', '')),
         'percentage_of_green': float(rgb_percent.green.replace('%', '')),
         'percentage_of_blue': float(rgb_percent.blue.replace('%', '')),
+        'percentage_of_luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'hsv': f'({clr.HSV.hue}, {clr.HSV.saturation}, {clr.HSV.value})',
         'rgb': f'({clr.RGB.red}, {clr.RGB.green}, {clr.RGB.blue})',
-        'percentage_of_luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'image': url,
         'red': clr.RGB.red,
         'green': clr.RGB.green,
@@ -59,16 +64,20 @@ def get_color_info(rgb_id):
 
 def get_color_attributes(info_dict):
     """Convert color information into OpenSea-compatible attributes."""
+
+    # Remove internal-only attributes before returning public metadata.
+    external_attrs = info_dict.copy()
+    for attr in INTERNAL_ATTRIBUTES:
+        del(external_attrs[attr])
+
+    # Generate attributes about this color.
     attrs = []
-    for key, value in info_dict.items():
+    for key, value in external_attrs.items():
         attr = {'trait_type': key, 'value': value, 'display_type': 'string'}
-        if key == 'luminance':
-            attr['display_type'] = 'boost_number'
-        else:
-            if isinstance(value, int) or isinstance(value, float):
-                attr['display_type'] = 'number'
-            if key.startswith('percentage_of'):
-                attr['display_type'] = 'boost_percent'
+        if isinstance(value, int) or isinstance(value, float):
+            attr['display_type'] = 'number'
+        if key.startswith('percentage_of'):
+            attr['display_type'] = 'boost_percent'
         attrs.append(attr)
     return attrs
 
@@ -95,14 +104,11 @@ def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
 
 def _get_bucket():
     """Authenticates to the Google Storage Cloud bucket stored in credentials.json."""
-    credentials = service_account.Credentials.from_service_account_file(
-        'credentials.json')
+    credentials = sa.Credentials.from_service_account_file(STORAGE_CREDENTIALS)
     if credentials.requires_scopes:
-        credentials = credentials.with_scopes(
-            ['https://www.googleapis.com/auth/devstorage.read_write'])
-    client = storage.Client(
-        project=GOOGLE_STORAGE_PROJECT, credentials=credentials)
-    return client.get_bucket(GOOGLE_STORAGE_BUCKET)
+        credentials = credentials.with_scopes(STORAGE_SCOPES)
+    client = storage.Client(project=STORAGE_PROJECT, credentials=credentials)
+    return client.get_bucket(STORAGE_BUCKET)
 
 
 def _get_hex(rgb_id):
