@@ -49,7 +49,7 @@ def get_color_info(rgb_id):
         'percentage_of_blue': float(rgb_percent.blue.replace('%', '')),
         'hsv': f'({clr.HSV.hue}, {clr.HSV.saturation}, {clr.HSV.value})',
         'rgb': f'({clr.RGB.red}, {clr.RGB.green}, {clr.RGB.blue})',
-        'luminance': float("%.2f" % lum),
+        'percentage_of_luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'image': url,
         'red': clr.RGB.red,
         'green': clr.RGB.green,
@@ -69,7 +69,6 @@ def get_color_attributes(info_dict):
                 attr['display_type'] = 'number'
             if key.startswith('percentage_of'):
                 attr['display_type'] = 'boost_percent'
-
         attrs.append(attr)
     return attrs
 
