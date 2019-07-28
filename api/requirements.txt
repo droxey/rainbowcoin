@@ -1,4 +1,5 @@
 autopep8==1.4.4
+blinker==1.4
 cachetools==3.1.1
 certifi==2019.6.16
 chardet==3.0.4
@@ -26,6 +27,8 @@ python-dotenv==0.10.3
 pytz==2019.1
 requests==2.22.0
 rsa==4.0
+sentry-sdk==0.10.2
 six==1.12.0
 urllib3==1.25.3
+webcolors==1.9.1
 Werkzeug==0.15.4
