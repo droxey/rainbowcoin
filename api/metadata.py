@@ -11,8 +11,8 @@ from PIL import Image, ImageDraw
 
 
 STORAGE_CREDENTIALS = os.getenv('CREDENTIALS_FILE', 'credentials.json')
-STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', None)
-STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', None)
+STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', 'RainbowCoin')
+STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 
 COIN_BLACK = 'images/coin/coin.png'
