@@ -53,10 +53,13 @@ def get_color_info(rgb_id):
         title = clr.title
         title_is_hex = False
 
-    if not title_is_hex:
+    if title_is_hex:
+        title = hex_hash.upper()
+    else:
         # We have a named color. Remove all punctuation from the string.
         title = title.translate(str.maketrans(
             '', '', string.punctuation)).title()
+
 
     # Generate image assets and upload them to Google Storage Cloud.
     url = _compose_image(rgb_id, clr.RGB.red,
