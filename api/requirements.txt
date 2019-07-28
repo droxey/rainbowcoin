@@ -1,10 +1,8 @@
-autopep8==1.4.4
 blinker==1.4
 cachetools==3.1.1
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
-colormap==1.0.2
 colourlovers==0.1.9
 Flask==1.0.3
 google-api-core==1.13.0
