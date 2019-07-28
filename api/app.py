@@ -21,8 +21,7 @@ def rainbowcoin(rgb_id):
     # Validate that rgb_id is a valid RGB integer.
     if int(rgb_id) not in range(0, 16777216):
         raise exceptions.InvalidUsage(
-            f'{rgb_id} is not a valid RGB integer. '
-            'Valid RGB integers range between 0 and 16,777,215.',
+            f'{rgb_id} is not a valid RGB integer. Valid RGB integers range between 0 and 16,777,215.',
             status_code=500)
 
     # Get all the data for this RainbowCoin.
