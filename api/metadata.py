@@ -1,6 +1,8 @@
 import os
 import webcolors
 import string
+import requests
+import json
 
 from colourlovers import clapi
 from google.cloud import storage
@@ -34,10 +36,25 @@ def get_color_info(rgb_id):
     lum = _get_luminance(clr.RGB.red, clr.RGB.blue, clr.RGB.green)
 
     # Normalize color title. Default is the hex code (with hash prefix).
-    title_is_hex = clr.title.upper() == hex_code
+    # Try the color.pizza API first (largest named list).
+    color_api = requests.get(f'https://api.color.pizza/v1/{hex_code}')
+    resp = json.loads(color_api.text)
+    try:
+        color = resp['colors'][0]
+        if color['distance'] <= 3:
+            title = color['name']
+    except KeyError:
+        pass  # Not important enough to hold us up.
+
+    title_is_hex = title.upper() == hex_code
+    if title_is_hex:
+        # If we didn't find a name from pizza.color,
+        # Use the one we found with the CL API.
+        title = clr.title
+
     if not title_is_hex:
         # We have a named color. Remove all punctuation from the string.
-        title = clr.title.translate(str.maketrans(
+        title = title.translate(str.maketrans(
             '', '', string.punctuation)).title()
 
     # Generate image assets and upload them to Google Storage Cloud.
