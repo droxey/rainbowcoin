@@ -51,6 +51,7 @@ def get_color_info(rgb_id):
         # If we didn't find a name from pizza.color,
         # Use the one we found with the CL API.
         title = clr.title
+        title_is_hex = False
 
     if not title_is_hex:
         # We have a named color. Remove all punctuation from the string.
