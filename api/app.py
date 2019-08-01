@@ -14,7 +14,7 @@ sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), integrations=[FlaskIntegration()])
 app = Flask(__name__)
 
 
-@app.route('/api/coin/<rgb_id>')
+@app.route('/coin/<rgb_id>')
 def rainbowcoin(rgb_id):
     """Returns JSON-serialized ERC-721 metadata for a single RainbowCoin."""
 

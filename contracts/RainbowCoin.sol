@@ -11,7 +11,7 @@ contract RainbowCoin is TradeableERC721Token {
   constructor(address _proxyRegistryAddress) TradeableERC721Token("RainbowCoin", "RGB", _proxyRegistryAddress) public {  }
 
   function baseTokenURI() public view returns (string memory) {
-    return "https://rainbowco.in/api/coin/";
+    return "https://rainbowco.in/coin/";
   }
 
   function mintTo(address _to, uint256 _rgbInt) public onlyOwner {
