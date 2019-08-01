@@ -20,8 +20,7 @@ STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 INTERNAL_ATTRIBUTES = ['title', 'description', 'image']
 HUES = [
-  ("Black", 0, 1),
-  ("Red", 1, 10),
+  ("Red", 0, 10),
   ("Red-Orange", 11, 20),
   ("Orange-Brown", 21, 40),
   ("Orange-Yellow", 41, 50),
@@ -55,10 +54,14 @@ def get_color_info(rgb_id):
     saturation = int(math.floor(s * 255.0))
     value = int(math.floor(v * 255.0))
 
-    hue_name = ""
-    for colors in HUES:
-      if hue in range(colors[1], colors[2]):
-        hue_name = colors[0]
+    if value == 0:
+      hue_name = "Black"
+    elif value == 255:
+      hue_name = "White"
+    else:
+      for colors in HUES:
+        if hue in range(colors[1], colors[2]):
+          hue_name = colors[0]
 
     # Normalize user-provided custom names for colors.
     title_is_hex = title.startswith('#')   # Implementation will change later
