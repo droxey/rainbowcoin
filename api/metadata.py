@@ -1,24 +1,21 @@
-import os
-import webcolors
-import string
-import requests
 import json
+import os
+import string
+import numpy as np
+import pathlib
+import requests
+import webcolors
 
-from colourlovers import clapi
 from google.cloud import storage
 from google.oauth2 import service_account as sa
 from PIL import Image, ImageDraw
 
 
+COIN_SIZE = 500
 STORAGE_CREDENTIALS = os.getenv('CREDENTIALS_FILE', 'credentials.json')
 STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', 'RainbowCoin')
 STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
-
-COIN_BLACK = 'images/coin/coin.png'
-COIN_WHITE = 'images/coin/coin-light.png'
-COIN_PADDING = 3
-COIN_SIZE = 500 - COIN_PADDING
 INTERNAL_ATTRIBUTES = ['red', 'green', 'blue', 'title', 'description', 'image']
 
 
@@ -26,60 +23,36 @@ def get_color_info(rgb_id):
     """Return everything we know about this rgb_id (an RGB integer)."""
     hex_code = _get_hex(rgb_id)
     hex_hash = title = f"#{hex_code}"
-
-    # Call ColourLovers API and search for the hex color.
-    cl = clapi.ColourLovers()
-    clr = cl.search_color(hexvalue=hex_code, format='json')[0]
+    red, green, blue = _get_rgb_from_token(rgb_id)
+    title = hex_hash.upper()
 
     # Gather color stats and attributes.
     rgb_percent = webcolors.hex_to_rgb_percent(hex_hash)
-    lum = _get_luminance(clr.RGB.red, clr.RGB.blue, clr.RGB.green)
+    lum = _get_luminance(red, green, blue)
 
-    # Normalize color title. Default is the hex code (with hash prefix).
-    # Try the color.pizza API first (largest named list).
-    color_api = requests.get(f'https://api.color.pizza/v1/{hex_code}')
-    resp = json.loads(color_api.text)
-    try:
-        color = resp['colors'][0]
-        if color['distance'] <= 3:
-            title = color['name']
-    except KeyError:
-        pass  # Not important enough to hold us up.
-
-    title_is_hex = title.upper() == hex_code
-    if title_is_hex:
-        # If we didn't find a name from pizza.color,
-        # Use the one we found with the CL API.
-        title = clr.title
-        title_is_hex = False
-
-    if title_is_hex:
-        title = hex_hash.upper()
-    else:
+    # Normalize user-provided custom names for colors.
+    title_is_hex = title.startswith('#')   # Implementation will change later
+    if not title_is_hex:
         # We have a named color. Remove all punctuation from the string.
-        title = title.translate(str.maketrans(
-            '', '', string.punctuation)).title()
-
+        title = title.translate(str.maketrans('', '', string.punctuation)).title()
 
     # Generate image assets and upload them to Google Storage Cloud.
-    url = _compose_image(rgb_id, clr.RGB.red,
-                         clr.RGB.green, clr.RGB.blue, lum)
+    url = _compose_image(rgb_id, red, green, blue, lum)
 
     return {
         'title': title,
-        'description': f'A {title if title_is_hex else title.lower()} colored RainbowCoin.',
+        'description': f'A {title} colored RainbowCoin.',
         'rgb_integer': int(rgb_id),
         'hex_code': hex_hash,
         'percentage_of_red': float(rgb_percent.red.replace('%', '')),
         'percentage_of_green': float(rgb_percent.green.replace('%', '')),
         'percentage_of_blue': float(rgb_percent.blue.replace('%', '')),
         'percentage_of_luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
-        'hsv': f'({clr.HSV.hue}, {clr.HSV.saturation}, {clr.HSV.value})',
-        'rgb': f'({clr.RGB.red}, {clr.RGB.green}, {clr.RGB.blue})',
+        'rgb': f'({red}, {green}, {blue})',
         'image': url,
-        'red': clr.RGB.red,
-        'green': clr.RGB.green,
-        'blue': clr.RGB.blue,
+        'red': red,
+        'green': green,
+        'blue': blue,
     }
 
 
@@ -105,22 +78,35 @@ def get_color_attributes(info_dict):
 
 def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
     """Create a RainbowCoin, saved to images/output/{rgb_id}.png"""
-    bkg = Image.new('RGBA', (COIN_SIZE + COIN_PADDING,
-                             COIN_SIZE + COIN_PADDING), (0, 0, 0, 0))
+    output_path = f"images/output/{rgb_id}.png"
+    file = pathlib.Path(output_path)
+    if file.exists():
+        return f"https://storage.googleapis.com/rainbowco.in/coins/{rgb_id}.png"
+    else:
+        # Open the two high-res PNGs for the base and face.
+        face =  Image.open('images/coin/coin-face.png').convert("RGBA")
+        base = Image.open('images/coin/coin-base.png').convert("RGBA")
 
-    draw = ImageDraw.Draw(bkg)
-    draw.ellipse((COIN_PADDING, COIN_PADDING, COIN_SIZE, COIN_SIZE),
-                 fill=(red, green, blue, 255))
+        # Generate a (height x width x 4) numpy array & unpack for readability.
+        image_colors = np.array(face)
+        r, g, b, a = image_colors.T
 
-    base_img = COIN_BLACK if lum > 30.0 else COIN_WHITE
-    base = Image.open(base_img).convert("RGBA")
-    output_path = "images/output/%s.png" % rgb_id
-    composite = Image.alpha_composite(bkg, base)
-    composite.save(output_path)
+        # Replace all the lime green areas with the coin's minted color.
+        green_areas = (r == 0) & (g == 255) & (b == 0)
+        image_colors[..., :-1][green_areas.T] = (red, green, blue)
 
-    blob = _get_bucket().blob(f"{path}/{rgb_id}.png")
-    blob.upload_from_filename(filename=output_path)
-    return blob.public_url
+        # Create an ellipse from the numpy array and combine it with the base image.
+        color_ellipse = Image.fromarray(image_colors)
+        composite = Image.alpha_composite(base, color_ellipse)
+
+        # Save the composite image to disk.
+        composite.save(output_path)
+
+        # Upload the composite to Google Storage.
+        blob = _get_bucket().blob(f"{path}/{rgb_id}.png")
+        blob.upload_from_filename(filename=output_path)
+        return blob.public_url
+
 
 
 def _get_bucket():
@@ -131,6 +117,11 @@ def _get_bucket():
     client = storage.Client(project=STORAGE_PROJECT, credentials=credentials)
     return client.get_bucket(STORAGE_BUCKET)
 
+def _get_rgb_from_token(rgb_id):
+    tmp, blue= divmod(int(rgb_id), 256)
+    tmp, green= divmod(tmp, 256)
+    alpha, red= divmod(tmp, 256)
+    return red, green, blue
 
 def _get_hex(rgb_id):
     """Convert rgb_id (an RGB integer) to RGB, then return the corresponding hex code."""
@@ -138,7 +129,6 @@ def _get_hex(rgb_id):
     tmp, g = divmod(tmp, 256)
     alpha, r = divmod(tmp, 256)
     return "{:02x}{:02x}{:02x}".format(r, g, b).upper()
-
 
 def _get_luminance(r, g, b):
     """Returns the luminance value for a given RGB color."""
