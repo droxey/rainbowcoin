@@ -54,9 +54,9 @@ def get_color_info(rgb_id):
     saturation = int(math.floor(s * 255.0))
     value = int(math.floor(v * 255.0))
 
-    if value == 0:
+    if hue == 0 and saturation == 0 and value == 0:
       hue_name = "Black"
-    elif value == 255:
+    elif hue == 0 and saturation == 0 and value == 255:
       hue_name = "White"
     else:
       for colors in HUES:
