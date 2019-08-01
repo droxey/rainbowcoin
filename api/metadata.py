@@ -20,7 +20,8 @@ STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 INTERNAL_ATTRIBUTES = ['title', 'description', 'image']
 HUES = [
-  ("Red", 0, 10),
+  ("Black", 0, 1),
+  ("Red", 1, 10),
   ("Red-Orange", 11, 20),
   ("Orange-Brown", 21, 40),
   ("Orange-Yellow", 41, 50),
@@ -49,14 +50,15 @@ def get_color_info(rgb_id):
     # Gather color stats and attributes.
     rgb_percent = webcolors.hex_to_rgb_percent(hex_hash)
     lum = _get_luminance(red, green, blue)
-    h, s, value = colorsys.rgb_to_hsv(red / 255.0, green / 255.0, blue / 255.0)
+    h, s, v = colorsys.rgb_to_hsv(red / 255.0, green / 255.0, blue / 255.0)
+    hue = int(math.floor(h * 360.0))
     saturation = int(math.floor(s * 255.0))
-    hue_name = ""
-    color_hue = int(math.floor(h * 360.0))
+    value = int(math.floor(v * 255.0))
 
-    for hue in HUES:
-      if color_hue in range(hue[1], hue[2]):
-        hue_name = hue[0]
+    hue_name = ""
+    for colors in HUES:
+      if hue in range(colors[1], colors[2]):
+        hue_name = colors[0]
 
     # Normalize user-provided custom names for colors.
     title_is_hex = title.startswith('#')   # Implementation will change later
@@ -68,13 +70,13 @@ def get_color_info(rgb_id):
     url = _compose_image(rgb_id, red, green, blue, lum)
 
     return {
-        'title': title,
-        'description': f'A {title} colored RainbowCoin.',
+        'title': f"{title} ({hue_name})",
+        'description': f'A {hue_name.lower()} colored RainbowCoin.',
         'rgb_integer': int(rgb_id),
         'hex_code': hex_hash,
         'luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'rgb': f'({red}, {green}, {blue})',
-        'hsv': f'({color_hue}, {saturation}, {value * 255.0})',
+        'hsv': f'({hue}, {saturation}, {value})',
         'hue_name': hue_name,
         'image': url,
         'red': red,
