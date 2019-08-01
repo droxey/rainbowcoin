@@ -1,5 +1,7 @@
 import json
+import math
 import os
+import colorsys
 import string
 import numpy as np
 import pathlib
@@ -16,8 +18,26 @@ STORAGE_CREDENTIALS = os.getenv('CREDENTIALS_FILE', 'credentials.json')
 STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', 'RainbowCoin')
 STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
-INTERNAL_ATTRIBUTES = ['red', 'green', 'blue', 'title', 'description', 'image']
-
+INTERNAL_ATTRIBUTES = ['title', 'description', 'image']
+HUES = [
+  ("Red", 0, 10),
+  ("Red-Orange", 11, 20),
+  ("Orange-Brown", 21, 40),
+  ("Orange-Yellow", 41, 50),
+  ("Yellow", 51, 60),
+  ("Yellow-Green", 61, 80),
+  ("Green", 81, 140),
+  ("Green-Cyan", 141, 169),
+  ("Cyan", 170, 200),
+  ("Cyan-Blue", 201, 220),
+  ("Blue", 221, 240),
+  ("Blue-Magenta", 241, 280),
+  ("Magenta", 281, 320),
+  ("Magenta-Pink", 321, 330),
+  ("Pink", 331, 345),
+  ("Pink-Red", 346, 355),
+  ("Red", 355, 360),
+]
 
 def get_color_info(rgb_id):
     """Return everything we know about this rgb_id (an RGB integer)."""
@@ -29,6 +49,14 @@ def get_color_info(rgb_id):
     # Gather color stats and attributes.
     rgb_percent = webcolors.hex_to_rgb_percent(hex_hash)
     lum = _get_luminance(red, green, blue)
+    h, s, value = colorsys.rgb_to_hsv(red / 255.0, green / 255.0, blue / 255.0)
+    saturation = int(math.floor(s * 255.0))
+    hue_name = ""
+    color_hue = int(math.floor(h * 360.0))
+
+    for hue in HUES:
+      if color_hue in range(hue[1], hue[2]):
+        hue_name = hue[0]
 
     # Normalize user-provided custom names for colors.
     title_is_hex = title.startswith('#')   # Implementation will change later
@@ -44,11 +72,10 @@ def get_color_info(rgb_id):
         'description': f'A {title} colored RainbowCoin.',
         'rgb_integer': int(rgb_id),
         'hex_code': hex_hash,
-        'percentage_of_red': float(rgb_percent.red.replace('%', '')),
-        'percentage_of_green': float(rgb_percent.green.replace('%', '')),
-        'percentage_of_blue': float(rgb_percent.blue.replace('%', '')),
-        'percentage_of_luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
+        'luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'rgb': f'({red}, {green}, {blue})',
+        'hsv': f'({color_hue}, {saturation}, {value})',
+        'hue_name': hue_name,
         'image': url,
         'red': red,
         'green': green,
@@ -70,8 +97,6 @@ def get_color_attributes(info_dict):
         attr = {'trait_type': key, 'value': value}
         if isinstance(value, int) or isinstance(value, float):
             attr['display_type'] = 'number'
-        # if key.startswith('percentage_of'):
-        #     attr['display_type'] = 'boost_percent'
         attrs.append(attr)
     return attrs
 
