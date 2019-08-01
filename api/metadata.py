@@ -70,8 +70,8 @@ def get_color_attributes(info_dict):
         attr = {'trait_type': key, 'value': value}
         if isinstance(value, int) or isinstance(value, float):
             attr['display_type'] = 'number'
-        if key.startswith('percentage_of'):
-            attr['display_type'] = 'boost_percent'
+        # if key.startswith('percentage_of'):
+        #     attr['display_type'] = 'boost_percent'
         attrs.append(attr)
     return attrs
 
