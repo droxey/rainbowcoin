@@ -74,7 +74,7 @@ def get_color_info(rgb_id):
         'hex_code': hex_hash,
         'luminance': float("%.2f" % ((float(lum) / 255.0) * 100)),
         'rgb': f'({red}, {green}, {blue})',
-        'hsv': f'({color_hue}, {saturation}, {value})',
+        'hsv': f'({color_hue}, {saturation}, {value * 255.0})',
         'hue_name': hue_name,
         'image': url,
         'red': red,
