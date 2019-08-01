@@ -67,7 +67,7 @@ def get_color_attributes(info_dict):
     # Generate attributes about this color.
     attrs = []
     for key, value in external_attrs.items():
-        attr = {'trait_type': key, 'value': value, 'display_type': 'string'}
+        attr = {'trait_type': key, 'value': value}
         if isinstance(value, int) or isinstance(value, float):
             attr['display_type'] = 'number'
         if key.startswith('percentage_of'):

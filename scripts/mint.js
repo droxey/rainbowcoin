@@ -3,12 +3,9 @@ const web3 = require('web3');
 
 const MNEMONIC = process.env.MNEMONIC;
 const INFURA_KEY = process.env.INFURA_KEY;
-const FACTORY_CONTRACT_ADDRESS = process.env.FACTORY_CONTRACT_ADDRESS;
 const NFT_CONTRACT_ADDRESS = process.env.NFT_CONTRACT_ADDRESS;
 const OWNER_ADDRESS = process.env.OWNER_ADDRESS;
 const NETWORK = process.env.NETWORK;
-const DEFAULT_OPTION_ID = 0;
-const NUM_TO_MINT = 20;
 
 if (!MNEMONIC || !INFURA_KEY || !OWNER_ADDRESS || !NETWORK) {
     console.error("Please set a mnemonic, infura key, owner, network, and contract address.")
@@ -21,6 +18,10 @@ const NFT_ABI = [{
       {
         "name": "_to",
         "type": "address"
+      },
+      {
+        "name": "_rgbInt",
+        "type": "uint256"
       }
     ],
     "name": "mintTo",
@@ -28,49 +29,30 @@ const NFT_ABI = [{
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
-}]
+}];
 
-const FACTORY_ABI = [{
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_optionId",
-        "type": "uint256"
-      },
-      {
-        "name": "_toAddress",
-        "type": "address"
-      }
-    ],
-    "name": "mint",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-}]
 
 async function main() {
     const provider = new HDWalletProvider(MNEMONIC, `https://${NETWORK}.infura.io/v3/${INFURA_KEY}`);
     const web3Instance = new web3(provider);
 
+    // Black, Red, OrangeYellow, Green, Blue, Purple, White
+    const coinsToMint = [0, 15874875, 16765264, 5234049, 3582698, 11444714, 16777215];
+
     if (NFT_CONTRACT_ADDRESS) {
         const nftContract = new web3Instance.eth.Contract(NFT_ABI, NFT_CONTRACT_ADDRESS, { gasLimit: "1000000" });
 
-        // Creatures issued directly to the owner.
-        for (var i = 0; i < NUM_TO_MINT; i++) {
-            const result = await nftContract.methods.mintTo(OWNER_ADDRESS).send({ from: OWNER_ADDRESS });
-            console.log("Minted creature. Transaction: " + result.transactionHash);
-        }
-    }
-    else if (FACTORY_CONTRACT_ADDRESS) {
-        const factoryContract = new web3Instance.eth.Contract(FACTORY_ABI, FACTORY_CONTRACT_ADDRESS, { gasLimit: "1000000" })
+        for (var i = 0; i < coinsToMint.length; i++) {
+          const result = await nftContract.methods.mintTo(OWNER_ADDRESS, coinsToMint[i]).send({
+            from: OWNER_ADDRESS
+          });
 
-        // Creatures issued directly to the owner.
-        for (var i = 0; i < NUM_TO_MINT; i++) {
-            const result = await factoryContract.methods.mint(DEFAULT_OPTION_ID, OWNER_ADDRESS).send({ from: OWNER_ADDRESS });
-            console.log("Minted creature. Transaction: " + result.transactionHash);
+          console.log("Minted RainbowCoin #" + coinsToMint[i] + "! Transaction:", result.transactionHash);
         }
+
+        console.log("Minting complete!", coinsToMint.length, "coins minted.");
     }
 }
 
-main()
+main();
+

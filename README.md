@@ -1,4 +1,4 @@
-<img src="header.png">
+<p align="center"><img src="api/images/coin/coins.svg" height="185"></p>
 
 # rainbowcoin
 
