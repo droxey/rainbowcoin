@@ -13,34 +13,36 @@ from google.oauth2 import service_account as sa
 from PIL import Image, ImageDraw
 
 
-COIN_SIZE = 500
+COIN_SIZE = (375, 375)
 STORAGE_CREDENTIALS = os.getenv('CREDENTIALS_FILE', 'credentials.json')
 STORAGE_PROJECT = os.getenv('GOOGLE_STORAGE_PROJECT', 'RainbowCoin')
 STORAGE_BUCKET = os.getenv('GOOGLE_STORAGE_BUCKET', 'rainbowco.in')
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 INTERNAL_ATTRIBUTES = ['title', 'description', 'image']
 HUES = [
-  ("Red", 0, 10),
-  ("Red-Orange", 11, 20),
-  ("Orange-Brown", 21, 40),
-  ("Orange-Yellow", 41, 50),
-  ("Yellow", 51, 60),
-  ("Yellow-Green", 61, 80),
-  ("Green", 81, 140),
-  ("Green-Cyan", 141, 169),
-  ("Cyan", 170, 200),
-  ("Cyan-Blue", 201, 220),
-  ("Blue", 221, 240),
-  ("Blue-Magenta", 241, 280),
-  ("Magenta", 281, 320),
-  ("Magenta-Pink", 321, 330),
-  ("Pink", 331, 345),
-  ("Pink-Red", 346, 355),
-  ("Red", 355, 360),
+    ("Red", 0, 10),
+    ("Red-Orange", 11, 20),
+    ("Orange-Brown", 21, 40),
+    ("Orange-Yellow", 41, 50),
+    ("Yellow", 51, 60),
+    ("Yellow-Green", 61, 80),
+    ("Green", 81, 140),
+    ("Green-Cyan", 141, 169),
+    ("Cyan", 170, 200),
+    ("Cyan-Blue", 201, 220),
+    ("Blue", 221, 240),
+    ("Blue-Magenta", 241, 280),
+    ("Magenta", 281, 320),
+    ("Magenta-Pink", 321, 330),
+    ("Pink", 331, 345),
+    ("Pink-Red", 346, 355),
+    ("Red", 355, 360),
 ]
+
 
 def get_color_info(rgb_id):
     """Return everything we know about this rgb_id (an RGB integer)."""
+    hue_name = "Unknown"
     hex_code = _get_hex(rgb_id)
     hex_hash = title = f"#{hex_code}"
     red, green, blue = _get_rgb_from_token(rgb_id)
@@ -55,19 +57,20 @@ def get_color_info(rgb_id):
     value = int(math.floor(v * 255.0))
 
     if hue == 0 and saturation == 0 and value == 0:
-      hue_name = "Black"
+        hue_name = "Black"
     elif hue == 0 and saturation == 0 and value == 255:
-      hue_name = "White"
+        hue_name = "White"
     else:
-      for colors in HUES:
-        if hue in range(colors[1], colors[2]):
-          hue_name = colors[0]
+        for colors in HUES:
+            if hue in range(colors[1], colors[2]):
+                hue_name = colors[0]
 
     # Normalize user-provided custom names for colors.
     title_is_hex = title.startswith('#')   # Implementation will change later
     if not title_is_hex:
-        # We have a named color. Remove all punctuation from the string.
-        title = title.translate(str.maketrans('', '', string.punctuation)).title()
+            # We have a named color. Remove all punctuation from the string.
+        title = title.translate(str.maketrans(
+            '', '', string.punctuation)).title()
 
     # Generate image assets and upload them to Google Storage Cloud.
     url = _compose_image(rgb_id, red, green, blue, lum)
@@ -114,7 +117,7 @@ def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
         return f"https://storage.googleapis.com/rainbowco.in/coins/{rgb_id}.png"
     else:
         # Open the two high-res PNGs for the base and face.
-        face =  Image.open('images/coin/coin-face.png').convert("RGBA")
+        face = Image.open('images/coin/coin-face.png').convert("RGBA")
         base = Image.open('images/coin/coin-base.png').convert("RGBA")
 
         # Generate a (height x width x 4) numpy array & unpack for readability.
@@ -129,6 +132,9 @@ def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
         color_ellipse = Image.fromarray(image_colors)
         composite = Image.alpha_composite(base, color_ellipse)
 
+        # Resize the composite image for compatibility with the OpenSea storefront.
+        resized_image = composite.resize(COIN_SIZE, Image.ANTIALIAS)
+
         # Save the composite image to disk.
         composite.save(output_path)
 
@@ -136,7 +142,6 @@ def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
         blob = _get_bucket().blob(f"{path}/{rgb_id}.png")
         blob.upload_from_filename(filename=output_path)
         return blob.public_url
-
 
 
 def _get_bucket():
@@ -147,11 +152,13 @@ def _get_bucket():
     client = storage.Client(project=STORAGE_PROJECT, credentials=credentials)
     return client.get_bucket(STORAGE_BUCKET)
 
+
 def _get_rgb_from_token(rgb_id):
-    tmp, blue= divmod(int(rgb_id), 256)
-    tmp, green= divmod(tmp, 256)
-    alpha, red= divmod(tmp, 256)
+    tmp, blue = divmod(int(rgb_id), 256)
+    tmp, green = divmod(tmp, 256)
+    alpha, red = divmod(tmp, 256)
     return red, green, blue
+
 
 def _get_hex(rgb_id):
     """Convert rgb_id (an RGB integer) to RGB, then return the corresponding hex code."""
@@ -159,6 +166,7 @@ def _get_hex(rgb_id):
     tmp, g = divmod(tmp, 256)
     alpha, r = divmod(tmp, 256)
     return "{:02x}{:02x}{:02x}".format(r, g, b).upper()
+
 
 def _get_luminance(r, g, b):
     """Returns the luminance value for a given RGB color."""
