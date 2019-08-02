@@ -1,21 +1,21 @@
 {
-  "name": "erc721-starter-contracts",
+  "name": "rainbowcoin",
   "version": "1.0.0",
-  "description": "Starter contracts for an ERC721 project.",
+  "description": "RainbowCoin ERC721 project.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ProjectOpenSea/erc721-starter-contracts.git"
+    "url": "git+https://github.com/droxey/rainbowcoin.git"
   },
-  "author": "devin.finzer@opensea.io",
-  "license": "ISC",
+  "author": "Dani Roxberry <dani@makeschool.com>",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ProjectOpenSea/erc721-starter-contracts/issues"
+    "url": "https://github.com/droxey/rainbowcoin/issues"
   },
-  "homepage": "https://github.com/ProjectOpenSea/erc721-starter-contracts#readme",
+  "homepage": "https://github.com/droxey/rainbowcoin",
   "dependencies": {
     "@0x/subproviders": "^2.1.4",
     "chalk": "^2.4.2",

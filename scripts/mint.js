@@ -1,12 +1,12 @@
-// [CONFIG] User-configurable constants. These values are safe to change.
+// [CONFIG] These values are safe to change.
 const START_COIN = 19876;
 const TOTAL_COINS = 10;
+const MINT_RANDOM_COINS = true;
 // [/CONFIG] Do not modify anything below this line.
 
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
 const intToRGB = require('int-to-rgb');
-const date = require('date-and-time');
 const chalk = require('chalk');
 const web3 = require('web3');
 const log = console.log;
@@ -35,6 +35,16 @@ if (!CAN_MINT) {
     log(chalk.red.bold("[ERROR]", `The sum of START_COIN (${START_COIN}) and TOTAL_COINS (${TOTAL_COINS}) must equal an integer between 0 and 16777215.\n\nMinting failed.`));
     return
 }
+
+let coinsToMint = [];
+if (MINT_RANDOM_COINS) {
+    coinsToMint = Array(TOTAL_COINS).fill().map(() => Math.round(Math.random() * MAX_COINS));
+}
+else {
+    coinsToMint = [...range(START_COIN, (START_COIN + TOTAL_COINS))];
+}
+
+
 
 const NFT_ABI = [{
     "constant": false,
@@ -69,7 +79,10 @@ async function main() {
         let didMint = false;
 
         // Mint the coins!
-        for (var tokenId = START_COIN; tokenId < (START_COIN + TOTAL_COINS); tokenId++) {
+        log(chalk.green.bold(`\n--- MINTING STARTED ---\n\n`));
+        for (var tokenIndex = 0; tokenIndex < coinsToMint.length; tokenIndex++) {
+          const tokenId = coinsToMint[tokenIndex];
+
           await nftContract.methods.mintTo(OWNER_ADDRESS, tokenId).send({
             from: OWNER_ADDRESS
           }).then(result => {
@@ -85,22 +98,34 @@ async function main() {
             // Handle errors.
             const isGasError = error.message.indexOf(GAS_ERROR) !== -1;
             if (isGasError) {
-              log(chalk.yellow.bold(`[WARNING] ${tokenId} has already been minted.`));
+              log(chalk.yellow.bold(`[WARNING] ${tokenId} has already been minted.\n`));
             }
             else {
-              log(chalk.red.bold("[ERROR]", error.message));
+              log(chalk.red.bold(`[ERROR] ${error.message}\n`));
               process.exit(1);
             }
           });
         }
 
-        // Log when the minting is complete, then exit the script.
-        const scriptEndedOn = process.hrtime(scriptStartedOn);
+        if (didMint) {
+          // Log when the minting is complete, then exit the script.
+          const scriptEndedOn = process.hrtime(scriptStartedOn);
+          log(chalk.green.bold(`--- MINTING COMPLETE ---\n\n${TOTAL_COINS} coins minted.`));
+          info('Execution time (hr): %ds %dms', scriptEndedOn[0], scriptEndedOn[1] / 1000000);
 
-        log(chalk.green.bold("\n🙌 Minting complete!", TOTAL_COINS, "coins minted."));
-        info('Execution time (hr): %ds %dms', scriptEndedOn[0], scriptEndedOn[1] / 1000000);
-        process.exit(0);
+          process.exit(0);
+        }
     }
+}
+
+function* range(start, end) {
+  for (let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+
+function randomInt(low, high) {
+  return Math.floor(Math.random() * (high - low) + low);
 }
 
 main();

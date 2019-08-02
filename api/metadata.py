@@ -132,9 +132,6 @@ def _compose_image(rgb_id, red, green, blue, lum, path="coins"):
         color_ellipse = Image.fromarray(image_colors)
         composite = Image.alpha_composite(base, color_ellipse)
 
-        # Resize the composite image for compatibility with the OpenSea storefront.
-        resized_image = composite.resize(COIN_SIZE, Image.ANTIALIAS)
-
         # Save the composite image to disk.
         composite.save(output_path)
 

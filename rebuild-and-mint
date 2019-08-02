@@ -1,1 +1,1 @@
-rm -rf build && truffle deploy --network=rinkeby && source .env && node scripts/mint.js
+truffle deploy --network=rinkeby && source .env && node scripts/mint.js
