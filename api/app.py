@@ -40,6 +40,16 @@ def rainbowcoin(rgb_id):
     })
 
 
+@app.route('/')
+def home():
+    return 'Hello, world!'
+
+
+@app.route('/healthcheck')
+def healthcheck():
+    return 'OK'
+
+
 @app.errorhandler(exceptions.InvalidUsage)
 def handle_invalid_usage(error):
     """Handles exceptions and returns a helpful error to the user."""
@@ -58,8 +68,6 @@ def handle_invalid_usage(error):
 #         'external_url': 'https://rainbowco.in/factory/%s' % rgb_id,
 #         'attributes': []
 #     })
-
-
 if __name__ == '__main__':
     app.run(
         debug=os.getenv('DEBUG', True),
